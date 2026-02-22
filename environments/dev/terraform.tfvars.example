@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars and fill in. Do not commit terraform.tfvars if it contains secrets.
+
+aws_region   = "us-east-1"
+name_prefix  = "myapp-ue1-dev-eks-app"
+
+# CIDR allowed to SSH to bastion (e.g. "1.2.3.4/32" or "0.0.0.0/0" for any)
+bastion_ssh_cidr = "0.0.0.0/0"
+
+# EC2 key pair name (must exist in us-east-1)
+bastion_key_name = "my-key"
+
+# RDS credentials
+db_name     = "app"
+db_username = "admin"
+db_password = "CHANGE_ME"
+
+# Optional overrides
+# db_instance_class = "db.t3.micro"
+# ecr_repo_names    = ["login-service", "file-service"]
