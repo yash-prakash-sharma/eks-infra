@@ -37,7 +37,7 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_db_instance" "main" {
-  identifier     = "${var.name_prefix}-mysql"
+  identifier     = "${var.name_prefix}mysql"
   engine         = "mysql"
   engine_version = var.engine_version
 

@@ -62,7 +62,7 @@ variable "allocated_storage" {
 variable "max_allocated_storage" {
   description = "Max allocated storage for autoscaling (GB)"
   type        = number
-  default     = 100
+  default     = 20
 }
 
 variable "multi_az" {

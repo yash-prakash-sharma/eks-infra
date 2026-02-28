@@ -41,7 +41,6 @@ module "ecr" {
 # ------------------------------------------------------------------------------
 # RDS MySQL (private subnets, accessible via bastion)
 # ------------------------------------------------------------------------------
-/*
 module "rds" {
   source = "../../modules/rds"
 
@@ -56,12 +55,10 @@ module "rds" {
   instance_class  = var.db_instance_class
   tags            = local.tags
 }
-*/
 
 # ------------------------------------------------------------------------------
 # Bastion host (public subnet, can connect to RDS)
 # ------------------------------------------------------------------------------
-/*
 module "bastion" {
   source = "../../modules/bastion"
 
@@ -72,7 +69,6 @@ module "bastion" {
   key_name           = var.bastion_key_name
   tags               = local.tags
 }
-*/
 
 # ------------------------------------------------------------------------------
 # CloudFront (origin: dev-ui S3 bucket)
