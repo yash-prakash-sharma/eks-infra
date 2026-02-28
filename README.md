@@ -23,7 +23,7 @@ Use S3 for remote state (no DynamoDB). Create the bucket yourself, then configur
 
    ```bash
    cd environments/dev
-   terraform init -backend-config=backend.dev.hcl
+   terraform init
    ```
 
 ## Dev usage
@@ -37,8 +37,8 @@ Use S3 for remote state (no DynamoDB). Create the bucket yourself, then configur
 4. Run:
 
    ```bash
-   terraform plan
-   terraform apply
+   terraform plan -var-file="terraform-dev.tfvars"
+   terraform apply -var-file="terraform-dev.tfvars"
    ```
 
 ## Outputs

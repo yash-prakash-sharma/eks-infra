@@ -2,8 +2,10 @@
 # Example backend.dev.hcl (do not commit): bucket = "your-tfstate-bucket"
 terraform {
   backend "s3" {
-    key     = "dev/terraform.tfstate"
-    region  = "us-east-1"
+    bucket  = "tfprojbkt140525"
+    key     = "eks-infra/dev/terraform.tfstate"
+    region  = "us-east-2"
     encrypt = true
+    profile = "terraform-user"
   }
 }

@@ -42,7 +42,7 @@ output "ecr_repository_urls" {
   description = "ECR repository URLs"
   value       = module.ecr.repository_urls
 }
-
+/*
 output "rds_endpoint" {
   description = "RDS instance endpoint (use from bastion)"
   value       = module.rds.endpoint
@@ -63,3 +63,4 @@ output "bastion_ssh_command" {
   description = "Example SSH command to bastion"
   value       = "ssh -i <your-key.pem> ec2-user@${module.bastion.public_ip}"
 }
+*/
