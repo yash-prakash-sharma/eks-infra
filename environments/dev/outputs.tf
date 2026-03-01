@@ -23,6 +23,11 @@ output "ui_bucket_arn" {
   value       = module.s3_ui.bucket_arn
 }
 
+output "file_bucket_name" {
+  description = "S3 bucket name for file-service uploads"
+  value       = module.s3_files.bucket_name
+}
+
 output "cloudfront_domain_name" {
   description = "CloudFront distribution domain name"
   value       = module.cloudfront.cloudfront_domain_name
@@ -64,3 +69,13 @@ output "bastion_ssh_command" {
   value       = "ssh -i <your-key.pem> ec2-user@${module.bastion.public_ip}"
 }
 */
+
+output "eks_cluster_name" {
+  description = "EKS cluster name"
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
+}

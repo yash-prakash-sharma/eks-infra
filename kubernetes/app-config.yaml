@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: default
+type: Opaque
+# Note: In a true production environment, these should not be stored in plain text in git.
+# Consider using AWS Secrets Manager with External Secrets Operator or SOPS.
+# These values must be Base64 encoded.
+data:
+  # Example: echo -n "admin" | base64 -> YWRtaW4=
+  MYSQL_USER: "YWRtaW4=" 
+  MYSQL_PASSWORD: "TXlzcWxAOTk5" # Base64 of your mysql password
+  SECRET_KEY: "eW91cl9zdXBlcl9zZWNyZXRfa2V5"
+  AWS_ACCESS_KEY_ID: "eW91cl9hd3NfYWNjZXNzX2tleQ=="
+  AWS_SECRET_ACCESS_KEY: "eW91cl9hd3Nfc2VjcmV0X2tleQ=="
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+data:
+  MYSQL_SERVER: "myapp-ue1-dev-eks-appmysql.cxabc123.us-east-1.rds.amazonaws.com" # Replace with your RDS endpoint
+  MYSQL_PORT: "3306"
+  MYSQL_DB_LOGIN: "login_db"
+  MYSQL_DB_FILE: "file_db"
+  AWS_REGION_NAME: "us-east-1"
+  AWS_BUCKET_NAME: "myapp-ue1-dev-eks-app-files"
+  LOGIN_SERVICE_URL: "http://login-service:8000"
