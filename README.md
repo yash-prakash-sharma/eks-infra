@@ -1,57 +1,127 @@
-# eks-infra
+# Production EKS Infrastructure & Deployment Guide
 
-Terraform for EKS app infrastructure: VPC, S3, CloudFront (frontend), RDS MySQL, ECR, and bastion host.
+This repository contains the Terraform infrastructure and Kubernetes manifests to deploy a highly available, secure, and scalable microservices architecture (`login-service` and `file-service`) onto AWS Elastic Kubernetes Service (EKS).
 
-## Layout
+## Architecture Overview
 
-- **modules/** – Reusable modules: `vpc`, `s3`, `ecr`, `rds`, `bastion`, `cloudfront`
-- **environments/dev/** – Dev environment (us-east-1, prefix e.g. `myapp-ue1-dev-eks-app`)
+**1. Network Security (Private Cluster)**
+- **Private EKS Endpoint:** The EKS API server (Control Plane) is private. It cannot be accessed directly from the public internet, preventing external attacks.
+- **Private Nodes:** EC2 Worker nodes are deployed in Private Subnets. They pull Docker images from AWS ECR via a NAT Gateway.
+- **RDS MySQL:** The database resides in Private Subnets, accessible only from within the VPC.
 
-## Backend
+**2. Administration via Bastion Host**
+Since `kubectl` and `mysql` commands cannot reach the private resources from your local machine, a **Bastion Host** (jump box) is provisioned in the public subnet. You must SSH into the Bastion Host to interact with the cluster and database.
 
-Use S3 for remote state (no DynamoDB). Create the bucket yourself, then configure:
+**3. AWS Load Balancer Controller (Ingress)**
+Traffic from the internet is routed through an **Application Load Balancer (ALB)**, provisioned automatically by the `aws-load-balancer-controller`. 
+- The ALB handles SSL termination (HTTPS) using a free **AWS ACM Certificate** validated via your Custom Domain DNS.
+- Path-based routing dynamically sends `/files` traffic to the `file-service` and `/` traffic to the `login-service`.
 
-1. Create state bucket (one-time):
+---
 
-   ```bash
-   aws s3 mb s3://YOUR-STATE-BUCKET --region us-east-1
-   ```
+## 🚀 Step 1: Provision Infrastructure (Terraform)
 
-2. In `environments/dev/`, copy `backend.dev.hcl.example` to `backend.dev.hcl` and set `bucket`.
+### Pre-requisites
+1. AWS CLI installed and configured.
+2. Terraform installed.
+3. An S3 bucket created manually to store the Terraform state.
 
-3. Init with backend config:
-
-   ```bash
-   cd environments/dev
-   terraform init
-   ```
-
-## Dev usage
-
-1. `cd environments/dev`
-2. Copy `terraform.tfvars.example` to `terraform.tfvars` and set:
+### Setup
+1. Open `environments/dev/backend.dev.hcl.example`, rename it to `backend.dev.hcl`, and set your state bucket name.
+2. Open `environments/dev/terraform.tfvars.example`, rename it to `terraform.tfvars`, and configure:
    - `name_prefix` (e.g. `myapp-ue1-dev-eks-app`)
-   - `bastion_ssh_cidr`, `bastion_key_name`
-   - `db_username`, `db_password`
-3. Ensure an EC2 key pair named in `bastion_key_name` exists in us-east-1.
-4. Run:
+   - `domain_name` (e.g. `yourdomain.com`)
+   - `db_username` and `db_password`
+   - `bastion_key_name` (Ensure this EC2 key pair exists in `us-east-1`!)
 
-   ```bash
-   terraform plan -var-file="terraform-dev.tfvars"
-   terraform apply -var-file="terraform-dev.tfvars"
-   ```
+### Deploy
+```bash
+cd environments/dev
+terraform init -backend-config=backend.dev.hcl
+terraform apply -var-file="terraform.tfvars"
+```
 
-## Outputs
+## 🚀 Step 2: Configure Custom Domain (Hostinger / Route 53)
+1. Wait for `terraform apply` to finish. It will output `domain_validation_options`.
+2. Go to your Domain Registrar (e.g., Hostinger) DNS settings.
+3. Add the **CNAME** records specified in the `domain_validation_options` output to validate your AWS ACM Certificate. Wait until the certificate status in AWS changes from `Pending Validation` to `Issued`.
 
-- **Frontend:** CloudFront URL (origin: `{name_prefix}-dev-ui` S3 bucket)
-- **ECR:** `login-service`, `file-service` repository URLs
-- **RDS:** Endpoint (connect via bastion)
-- **Bastion:** Public IP and example SSH command
+---
 
-## Deploying the UI
+## 🚀 Step 3: Configure Database & Kubernetes (Bastion Host)
 
-Upload your frontend build to the UI bucket so CloudFront serves it:
+Everything from this point forward must be run from inside the **Bastion Host**.
+Get the Bastion IP from the Terraform outputs and SSH into it:
+```bash
+ssh -i /path/to/key.pem ec2-user@<BASTION_IP>
+```
+
+### 3.1 Initialize MySQL Databases
+Connect to your RDS instance using the endpoint provided in the Terraform outputs:
+```bash
+mysql -h <YOUR_RDS_ENDPOINT> -P 3306 -u <YOUR_DB_USERNAME> -p
+```
+Run the following SQL commands to create the dedicated databases for your microservices:
+```sql
+CREATE DATABASE login_db;
+CREATE DATABASE file_db;
+EXIT;
+```
+
+### 3.2 Update `kubeconfig`
+Connect your Bastion's `kubectl` CLI to the EKS Cluster:
+```bash
+aws eks update-kubeconfig --region us-east-1 --name <YOUR_EKS_CLUSTER_NAME>
+```
+
+### 3.3 Deploy the Microservices
+*Ensure you have copied the `kubernetes/` folder to your Bastion host (e.g., via `git clone` or `scp`).*
+
+1. Edit `kubernetes/app-config.yaml` to include your Base64 encoded secrets, S3 bucket names, and RDS Endpoint.
+2. Edit `kubernetes/login-service.yaml` and `file-service.yaml` to replace `<YOUR_AWS_ACCOUNT_ID>` with your 12-digit AWS Account ID where the Docker image URIs are defined.
+3. Apply the manifests:
+```bash
+kubectl apply -f kubernetes/app-config.yaml
+kubectl apply -f kubernetes/login-service.yaml
+kubectl apply -f kubernetes/file-service.yaml
+```
+
+---
+
+## 🚀 Step 4: Install AWS Load Balancer Controller
+To expose your services to the internet, you must install the ALB controller. From the Bastion Host, run:
 
 ```bash
-aws s3 sync ./dist s3://$(terraform -chdir=environments/dev output -raw ui_bucket_name) --delete
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=<YOUR_EKS_CLUSTER_NAME> \
+  --set serviceAccount.create=true \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=<YOUR_ALB_CONTROLLER_ROLE_ARN>
+```
+*(You can find the `<YOUR_ALB_CONTROLLER_ROLE_ARN>` in the Terraform outputs).*
+
+---
+
+## 🚀 Step 5: Route Traffic (Ingress)
+1. Open `kubernetes/ingress.yaml` on the Bastion Host.
+2. Replace `<YOUR_ACM_CERTIFICATE_ARN>` with the actual ARN from the Terraform output.
+3. Apply the ingress:
+```bash
+kubectl apply -f kubernetes/ingress.yaml
+```
+
+**Final DNS Step:**
+Run `kubectl get ingress`. Copy the Load Balancer `ADDRESS` URL. Finally, go back to your Domain Registrar (Hostinger) and create a **CNAME** (or **ALIAS**) record pointing your root domain (`@`) and/or `www` to that Load Balancer URL.
+
+## 🚀 Step 6: Deploying the Frontend UI
+Upload your compiled frontend build (e.g., React/Vite `./dist` folder) to the UI S3 bucket. CloudFront will automatically serve it globally.
+*(Run this from your local machine, not the Bastion)*:
+
+```bash
+cd environments/dev
+aws s3 sync ../../frontend/dist s3://$(terraform output -raw ui_bucket_name) --delete
 ```

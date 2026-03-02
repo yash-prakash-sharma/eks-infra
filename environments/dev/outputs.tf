@@ -79,3 +79,13 @@ output "eks_cluster_endpoint" {
   description = "EKS cluster endpoint"
   value       = module.eks.cluster_endpoint
 }
+
+output "domain_validation_options" {
+  description = "The CNAME records to add to Hostinger for ACM Validation"
+  value       = module.dns.domain_validation_options
+}
+
+output "acm_certificate_arn" {
+  description = "The ARN of the ACM Certificate"
+  value       = module.dns.acm_certificate_arn
+}

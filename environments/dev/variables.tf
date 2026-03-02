@@ -51,3 +51,8 @@ variable "ecr_repo_names" {
   type        = list(string)
   default     = ["login-service", "file-service"]
 }
+
+variable "domain_name" {
+  description = "Custom domain name (e.g. hostinger domain)"
+  type        = string
+}

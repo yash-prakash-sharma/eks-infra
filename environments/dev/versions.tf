@@ -6,13 +6,16 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4"
+    }
   }
 }
 
 provider "aws" {
   region  = var.aws_region
   profile = "terraform-user"
-
   default_tags {
     tags = {
       Environment = "dev"

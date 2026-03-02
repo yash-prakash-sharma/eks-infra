@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    
+    # Listen on HTTP (80) and HTTPS (443)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    
+    # Automatically redirect HTTP to HTTPS
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    
+    # Attach your Hostinger Domain's ACM Certificate (Replace this with the outputs from Terraform)
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:343218191101:certificate/0d93c88a-6c43-430f-9897-f06b4f1df095
+    
+    # Use ip routing and enable rewrite rules
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          # Route /files to the file-service
+          - path: /files
+            pathType: Prefix
+            backend:
+              service:
+                name: file-service
+                port:
+                  number: 8080
+                  
+          # Route everything else (root) to the login-service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: login-service
+                port:
+                  number: 8000
