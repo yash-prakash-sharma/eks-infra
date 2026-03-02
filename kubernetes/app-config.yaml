@@ -10,8 +10,8 @@ type: Opaque
 data:
   # Example: echo -n "admin" | base64 -> YWRtaW4=
   MYSQL_USER: "YWRtaW4="
-  MYSQL_PASSWORD: "SzhzJm1pY3Jvc3Zj" # Base64 of your mysql password
-  SECRET_KEY: "MDlkMjVlMDk0ZmFhNmNhMjU1NmM4MTgxNjZiN2E5NTYzYjkzZjcwOTlmNmYwZjRjYWE2Y2Y2M2I4OGU4ZDNlNw=="
+  MYSQL_PASSWORD: "<BASE64_MYSQL_PASSWORD>" # Base64 of your mysql password
+  SECRET_KEY: "<BASE64_SUPER_SECRET_KEY>"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -19,10 +19,10 @@ metadata:
   name: app-config
   namespace: default
 data:
-  MYSQL_SERVER: "myapp-ue1-dev-eks-appmysql.c21q4i0oom0q.us-east-1.rds.amazonaws.com" # Replace with your RDS endpoint
+  MYSQL_SERVER: "<YOUR_RDS_ENDPOINT>" # Replace with your RDS endpoint
   MYSQL_PORT: "3306"
   MYSQL_DB_LOGIN: "login_db"
   MYSQL_DB_FILE: "file_db"
   AWS_REGION_NAME: "us-east-1"
-  AWS_BUCKET_NAME: "myapp-ue1-dev-eks-app-files"
-  LOGIN_SERVICE_URL: "https://devopsengg.com"
+  AWS_BUCKET_NAME: "<YOUR_FILES_S3_BUCKET_NAME>"
+  LOGIN_SERVICE_URL: "https://<YOUR_CUSTOM_DOMAIN>"

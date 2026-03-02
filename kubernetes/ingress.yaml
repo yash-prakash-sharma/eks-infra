@@ -13,7 +13,7 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: '443'
     
     # Attach your Hostinger Domain's ACM Certificate (Replace this with the outputs from Terraform)
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:343218191101:certificate/0d93c88a-6c43-430f-9897-f06b4f1df095
+    alb.ingress.kubernetes.io/certificate-arn: <YOUR_ACM_CERTIFICATE_ARN>
     
     # Use ip routing and enable rewrite rules
     alb.ingress.kubernetes.io/target-type: ip
