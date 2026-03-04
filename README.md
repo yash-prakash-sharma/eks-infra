@@ -74,11 +74,28 @@ Connect your Bastion's `kubectl` CLI to the EKS Cluster:
 aws eks update-kubeconfig --region us-east-1 --name <YOUR_EKS_CLUSTER_NAME>
 ```
 
-### 3.3 Deploy the Microservices
+### 3.3 Setup External Secrets Operator (Production Recommended)
+To securely manage secrets directly from AWS Secrets Manager without using base64 Kubernetes secrets:
+1. Open the AWS Secrets Manager console and navigate to the newly created secret named `<YOUR_NAME_PREFIX>-app-secrets`. Edit the "Secret value" to set your actual plaintext `MYSQL_USER`, `MYSQL_PASSWORD`, and `SECRET_KEY`.
+2. Install the ESO operator onto your cluster via Helm:
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+helm install external-secrets external-secrets/external-secrets \
+    -n external-secrets --create-namespace \
+    --set installCRDs=true
+```
+3. Edit `kubernetes/external-secrets.yaml` and replace `<YOUR_ESO_ROLE_ARN>` and `<YOUR_NAME_PREFIX>` with the values from your Terraform outputs.
+4. Apply the External Secrets configuration to automatically sync the AWS Secrets into Kubernetes:
+```bash
+kubectl apply -f kubernetes/external-secrets.yaml
+```
+
+### 3.4 Deploy the Microservices
 *Ensure you have copied the `kubernetes/` folder to your Bastion host (e.g., via `git clone` or `scp`).*
 
-1. Edit `kubernetes/app-config.yaml` to include your Base64 encoded secrets, S3 bucket names, and RDS Endpoint.
-2. Edit `kubernetes/login-service.yaml` and `file-service.yaml` to replace `<YOUR_AWS_ACCOUNT_ID>` with your 12-digit AWS Account ID where the Docker image URIs are defined.
+1. Edit `kubernetes/app-config.yaml` to include your S3 bucket names and RDS Endpoint.
+2. Edit `kubernetes/login-service.yaml` and `file-service.yaml` to replace `<YOUR_AWS_ACCOUNT_ID>` with your 12-digit AWS Account ID.
 3. Apply the manifests:
 ```bash
 kubectl apply -f kubernetes/app-config.yaml

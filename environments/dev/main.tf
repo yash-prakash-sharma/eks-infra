@@ -150,3 +150,18 @@ output "alb_controller_role_arn" {
   description = "The ARN of the IAM Role for the AWS Load Balancer Controller (Pass this to Helm)"
   value       = module.alb_controller.alb_controller_role_arn
 }
+
+# ------------------------------------------------------------------------------
+# Secrets Manager & External Secrets Operator
+# ------------------------------------------------------------------------------
+module "secrets" {
+  source = "../../modules/secrets"
+
+  name_prefix       = var.name_prefix
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+
+  depends_on = [module.eks]
+
+  tags = local.tags
+}

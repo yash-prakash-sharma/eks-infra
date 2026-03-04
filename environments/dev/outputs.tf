@@ -89,3 +89,8 @@ output "acm_certificate_arn" {
   description = "The ARN of the ACM Certificate"
   value       = module.dns.acm_certificate_arn
 }
+
+output "eso_role_arn" {
+  description = "The ARN of the IAM Role for the External Secrets Operator"
+  value       = module.secrets.eso_role_arn
+}

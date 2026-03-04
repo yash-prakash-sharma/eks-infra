@@ -1,19 +1,4 @@
 apiVersion: v1
-kind: Secret
-metadata:
-  name: app-secrets
-  namespace: default
-type: Opaque
-# Note: In a true production environment, these should not be stored in plain text in git.
-# Consider using AWS Secrets Manager with External Secrets Operator or SOPS.
-# These values must be Base64 encoded.
-data:
-  # Example: echo -n "admin" | base64 -> YWRtaW4=
-  MYSQL_USER: "YWRtaW4="
-  MYSQL_PASSWORD: "<BASE64_MYSQL_PASSWORD>" # Base64 of your mysql password
-  SECRET_KEY: "<BASE64_SUPER_SECRET_KEY>"
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
