@@ -116,6 +116,12 @@ resource "aws_iam_role_policy_attachment" "node_AmazonEC2ContainerRegistryReadOn
   role       = aws_iam_role.node.name
 }
 
+resource "aws_iam_role_policy_attachment" "node_AmazonEBSCSIDriverPolicy" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  role       = aws_iam_role.node.name
+}
+
+
 # Custom policy to allow nodes to access the S3 bucket
 data "aws_iam_policy_document" "s3_access" {
   statement {
@@ -194,4 +200,18 @@ resource "aws_launch_template" "node" {
   }
 
   tags = var.tags
+}
+
+# ------------------------------------------------------------------------------
+# EKS Add-ons (EBS CSI Driver for Persistent Volumes)
+# ------------------------------------------------------------------------------
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  # Ensure the nodes have the IAM policy attached before the addon tries to deploy its DaemonSet
+  depends_on = [
+    aws_eks_node_group.main,
+    aws_iam_role_policy_attachment.node_AmazonEBSCSIDriverPolicy
+  ]
 }

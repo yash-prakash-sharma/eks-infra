@@ -1,0 +1,21 @@
+# kubernetes/observability/cluster-autoscaler-values.yaml
+
+autoDiscovery:
+  clusterName: <YOUR_EKS_CLUSTER_NAME>
+
+rbac:
+  create: true
+  serviceAccount:
+    create: true
+    name: cluster-autoscaler
+    annotations:
+      eks.amazonaws.com/role-arn: <YOUR_AUTOSCALER_ROLE_ARN>
+
+# Provide extra args to strict down scaling operations
+extraArgs:
+  skip-nodes-with-system-pods: "false"
+  scale-down-delay-after-add: "5m"
+  scale-down-unneeded-time: "5m"
+
+nodeSelector:
+  kubernetes.io/os: linux

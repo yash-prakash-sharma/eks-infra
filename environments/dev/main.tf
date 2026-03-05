@@ -86,7 +86,7 @@ module "eks" {
   desired_size         = 1
   min_size             = 1
   max_size             = 4
-  node_instance_types  = ["t3.medium"]
+  node_instance_types  = ["t3.large"]
 
   tags = local.tags
 }
@@ -156,6 +156,36 @@ output "alb_controller_role_arn" {
 # ------------------------------------------------------------------------------
 module "secrets" {
   source = "../../modules/secrets"
+
+  name_prefix       = var.name_prefix
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+
+  depends_on = [module.eks]
+
+  tags = local.tags
+}
+
+# ------------------------------------------------------------------------------
+# Observability: Fluent Bit (Logs)
+# ------------------------------------------------------------------------------
+module "fluent_bit" {
+  source = "../../modules/fluent_bit"
+
+  name_prefix       = var.name_prefix
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+
+  depends_on = [module.eks]
+
+  tags = local.tags
+}
+
+# ------------------------------------------------------------------------------
+# Cluster Autoscaler (Compute Scaling)
+# ------------------------------------------------------------------------------
+module "autoscaler" {
+  source = "../../modules/autoscaler"
 
   name_prefix       = var.name_prefix
   oidc_provider_arn = module.eks.oidc_provider_arn

@@ -123,7 +123,49 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
 
 ---
 
-## 🚀 Step 5: Route Traffic (Ingress)
+## 🚀 Step 5: Observability & Logging (Metrics & Tracing)
+*Run these commands on your Bastion Host to deploy the industry-standard monitoring stack.*
+
+### 5.1 Prometheus & Grafana
+Displays compute metrics (CPU/Memory).
+1. Edit `kubernetes/observability/prometheus-values.yaml` and set your true `<YOUR_CUSTOM_DOMAIN>`. Keep the `/grafana` sub-path exactly as written.
+2. Install the stack via Helm:
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace observability --create-namespace \
+  -f kubernetes/observability/prometheus-values.yaml
+```
+
+### 5.2 AWS Fluent Bit
+Streams your application `stdout` logs centrally to AWS CloudWatch Logs.
+1. Edit `kubernetes/observability/fluent-bit-values.yaml`. Replace `<YOUR_FLUENTBIT_ROLE_ARN>` and `<YOUR_NAME_PREFIX>` with the values from your Terraform outputs.
+2. Install the AWS logging daemonset via Helm:
+```bash
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+helm install aws-for-fluent-bit eks/aws-for-fluent-bit \
+  --namespace observability \
+  -f kubernetes/observability/fluent-bit-values.yaml
+```
+
+### 5.3 Cluster Autoscaler (Elastic Compute Scaling)
+When your cluster reaches its maximum pod capacity, this automatically provisions new EC2 nodes.
+1. Edit `kubernetes/observability/cluster-autoscaler-values.yaml`. Replace `<YOUR_AUTOSCALER_ROLE_ARN>` and `<YOUR_EKS_CLUSTER_NAME>` with the values from your Terraform outputs.
+2. Install the Autoscaler via Helm:
+```bash
+helm repo add autoscaler https://kubernetes.github.io/autoscaler
+helm repo update
+helm install cluster-autoscaler autoscaler/cluster-autoscaler \
+  --namespace kube-system \
+  -f kubernetes/observability/cluster-autoscaler-values.yaml
+```
+
+---
+
+## 🚀 Step 6: Route Traffic (Ingress)
+Since we just added Grafana, the Ingress file now handles routing for three separate components!
 1. Open `kubernetes/ingress.yaml` on the Bastion Host.
 2. Replace `<YOUR_ACM_CERTIFICATE_ARN>` with the actual ARN from the Terraform output.
 3. Apply the ingress:
@@ -134,7 +176,7 @@ kubectl apply -f kubernetes/ingress.yaml
 **Final DNS Step:**
 Run `kubectl get ingress`. Copy the Load Balancer `ADDRESS` URL. Finally, go back to your Domain Registrar (Hostinger) and create a **CNAME** (or **ALIAS**) record pointing your root domain (`@`) and/or `www` to that Load Balancer URL.
 
-## 🚀 Step 6: Deploying the Frontend UI
+## 🚀 Step 7: Deploying the Frontend UI
 Upload your compiled frontend build (e.g., React/Vite `./dist` folder) to the UI S3 bucket. CloudFront will automatically serve it globally.
 *(Run this from your local machine, not the Bastion)*:
 

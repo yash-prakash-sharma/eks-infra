@@ -1,0 +1,61 @@
+# kubernetes/observability/fluent-bit-values.yaml
+# Custom Helm values for aws-for-fluent-bit
+
+global:
+  # Mount the pod directly on the host network to capture EC2 system logs efficiently
+  hostNetwork: true
+
+# The IRSA ServiceAccount created by Terraform
+serviceAccount:
+  create: true
+  name: fluent-bit
+  annotations:
+    eks.amazonaws.com/role-arn: <YOUR_FLUENTBIT_ROLE_ARN>
+
+cloudWatchLogs:
+  enabled: true
+  region: us-east-1
+  logGroupName: "/eks/<YOUR_NAME_PREFIX>/containers"
+  logStreamPrefix: "fluent-bit-"
+  # Only send errors and application logs, filter out the noisy kubernetes system logs to save money
+  logFormat: "json/emf"
+  logKey: "log"
+
+firehose:
+  enabled: false
+
+kinesis:
+  enabled: false
+
+elasticsearch:
+  enabled: false
+
+opensearch:
+  enabled: false
+
+# Custom input/filter configuration to extract Python/FastAPI JSON format automatically
+config:
+  inputs: |
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*_default_*.log
+        Parser            docker
+        DB                /var/fluent-bit/state/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+  filters: |
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
