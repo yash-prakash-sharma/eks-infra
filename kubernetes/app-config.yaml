@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+data:
+  MYSQL_SERVER: "<YOUR_RDS_ENDPOINT>" # Replace with your RDS endpoint
+  MYSQL_PORT: "3306"
+  MYSQL_DB_LOGIN: "login_db"
+  MYSQL_DB_FILE: "file_db"
+  AWS_REGION_NAME: "us-east-1"
+  AWS_BUCKET_NAME: "<YOUR_FILES_S3_BUCKET_NAME>"
+  LOGIN_SERVICE_URL: "https://<YOUR_CUSTOM_DOMAIN>"

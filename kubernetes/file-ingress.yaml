@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: file-ingress
+  namespace: default
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/group.name: "my-app-shared-alb"
+    alb.ingress.kubernetes.io/group.order: "10"
+    
+    # Must match exactly to attach to the HTTPS listener
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: <YOUR_ACM_CERTIFICATE_ARN>
+    
+    # Use ip routing to bypass NodePort and hit the pods directly
+    alb.ingress.kubernetes.io/target-type: ip
+    
+    # Explicit Health Check for File Service
+    alb.ingress.kubernetes.io/healthcheck-path: "/files/"
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /files
+            pathType: Prefix
+            backend:
+              service:
+                name: file-service
+                port:
+                  number: 8080

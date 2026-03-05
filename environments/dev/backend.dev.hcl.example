@@ -1,0 +1,5 @@
+# Backend config for dev. Copy to backend.dev.hcl and set your bucket.
+# Run: terraform init -backend-config=backend.dev.hcl
+# Do not commit backend.dev.hcl if it contains sensitive names.
+
+bucket = "your-terraform-state-bucket-name"

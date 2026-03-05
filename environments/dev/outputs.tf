@@ -1,0 +1,106 @@
+output "vpc_id" {
+  description = "VPC ID"
+  value       = module.vpc.vpc_id
+}
+
+output "private_subnet_ids" {
+  description = "Private subnet IDs"
+  value       = module.vpc.private_subnet_ids
+}
+
+output "public_subnet_ids" {
+  description = "Public subnet IDs"
+  value       = module.vpc.public_subnet_ids
+}
+
+output "ui_bucket_name" {
+  description = "S3 bucket name for UI build (CloudFront origin)"
+  value       = module.s3_ui.bucket_name
+}
+
+output "ui_bucket_arn" {
+  description = "S3 bucket ARN for UI"
+  value       = module.s3_ui.bucket_arn
+}
+
+output "file_bucket_name" {
+  description = "S3 bucket name for file-service uploads"
+  value       = module.s3_files.bucket_name
+}
+
+output "cloudfront_domain_name" {
+  description = "CloudFront distribution domain name"
+  value       = module.cloudfront.cloudfront_domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  description = "CloudFront hosted zone ID"
+  value       = module.cloudfront.cloudfront_hosted_zone_id
+}
+
+output "cloudfront_url" {
+  description = "URL for the frontend"
+  value       = "https://${module.cloudfront.cloudfront_domain_name}"
+}
+
+output "ecr_repository_urls" {
+  description = "ECR repository URLs"
+  value       = module.ecr.repository_urls
+}
+/*
+output "rds_endpoint" {
+  description = "RDS instance endpoint (use from bastion)"
+  value       = module.rds.endpoint
+  sensitive   = true
+}
+
+output "rds_port" {
+  description = "RDS port"
+  value       = module.rds.port
+}
+
+output "bastion_public_ip" {
+  description = "Bastion host public IP for SSH"
+  value       = module.bastion.public_ip
+}
+
+output "bastion_ssh_command" {
+  description = "Example SSH command to bastion"
+  value       = "ssh -i <your-key.pem> ec2-user@${module.bastion.public_ip}"
+}
+*/
+
+output "eks_cluster_name" {
+  description = "EKS cluster name"
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "EKS cluster endpoint"
+  value       = module.eks.cluster_endpoint
+}
+
+output "domain_validation_options" {
+  description = "The CNAME records to add to Hostinger for ACM Validation"
+  value       = module.dns.domain_validation_options
+}
+
+output "acm_certificate_arn" {
+  description = "The ARN of the ACM Certificate"
+  value       = module.dns.acm_certificate_arn
+}
+
+output "eso_role_arn" {
+  description = "The ARN of the IAM Role for the External Secrets Operator"
+  value       = module.secrets.eso_role_arn
+}
+
+output "fluentbit_role_arn" {
+  description = "The ARN of the IAM Role for Fluent Bit Logs"
+  value       = module.fluent_bit.fluentbit_role_arn
+}
+
+output "autoscaler_role_arn" {
+  description = "The ARN of the IAM Role for the Kubernetes Cluster Autoscaler"
+  value       = module.autoscaler.autoscaler_role_arn
+}

@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-service
+  labels:
+    app: file-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: file-service
+  template:
+    metadata:
+      labels:
+        app: file-service
+    spec:
+      containers:
+      - name: file-service
+        # Replace with your actual ECR image URI
+        image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/file-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: MYSQL_PASSWORD
+        - name: MYSQL_SERVER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MYSQL_SERVER
+        - name: MYSQL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MYSQL_PORT
+        - name: MYSQL_DB_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MYSQL_DB_FILE
+        - name: DATABASE_URL
+          value: "mysql+pymysql://$(MYSQL_USER):$(MYSQL_PASSWORD)@$(MYSQL_SERVER):$(MYSQL_PORT)/$(MYSQL_DB_FILE)"
+        - name: MYSQL_DB_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MYSQL_DB_FILE
+        - name: AWS_REGION_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AWS_REGION_NAME
+        - name: AWS_BUCKET_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: AWS_BUCKET_NAME
+        # Service Links
+        - name: LOGIN_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOGIN_SERVICE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+spec:
+  selector:
+    app: file-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
