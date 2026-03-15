@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 data "aws_iam_policy_document" "cluster_assume_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
     principals {
       type        = "Service"
@@ -40,12 +40,12 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = var.subnet_ids
     # Enforce private cluster API endpoint
     endpoint_private_access = true
-    endpoint_public_access  = false
+    endpoint_public_access  = true
   }
 
   access_config {
-      authentication_mode = "API_AND_CONFIG_MAP"
-      bootstrap_cluster_creator_admin_permissions = true
+    authentication_mode                         = "API"
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   depends_on = [
@@ -54,20 +54,6 @@ resource "aws_eks_cluster" "main" {
   ]
 
   tags = var.tags
-}
-
-# ------------------------------------------------------------------------------
-# IAM OIDC Provider for IAM Roles for Service Accounts (IRSA)
-# ------------------------------------------------------------------------------
-data "tls_certificate" "cluster" {
-  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
-}
-
-resource "aws_iam_openid_connect_provider" "cluster" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.cluster.certificates[0].sha1_fingerprint]
-  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
-  tags            = var.tags
 }
 
 # Allow Bastion host to communicate with the EKS API server
@@ -86,7 +72,7 @@ resource "aws_security_group_rule" "bastion_to_eks_api" {
 # ------------------------------------------------------------------------------
 data "aws_iam_policy_document" "node_assume_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
     principals {
       type        = "Service"
@@ -113,11 +99,6 @@ resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
 
 resource "aws_iam_role_policy_attachment" "node_AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.node.name
-}
-
-resource "aws_iam_role_policy_attachment" "node_AmazonEBSCSIDriverPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
   role       = aws_iam_role.node.name
 }
 
@@ -185,12 +166,18 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.node_AmazonEC2ContainerRegistryReadOnly,
   ]
 
+  lifecycle {
+    ignore_changes = [
+      scaling_config[0].desired_size
+    ]
+  }
+
   tags = var.tags
 }
 
 # Custom Launch Template to ensure pods can hit IMDSv2 (requires hop limit 2)
 resource "aws_launch_template" "node" {
-  name_prefix   = "${var.name_prefix}-node-template"
+  name_prefix            = "${var.name_prefix}-node-template"
   update_default_version = true
 
   metadata_options {
@@ -209,9 +196,43 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   cluster_name = aws_eks_cluster.main.name
   addon_name   = "aws-ebs-csi-driver"
 
-  # Ensure the nodes have the IAM policy attached before the addon tries to deploy its DaemonSet
+  # Ensure the Pod Identity is associated before the addon tries to deploy its DaemonSet
   depends_on = [
     aws_eks_node_group.main,
-    aws_iam_role_policy_attachment.node_AmazonEBSCSIDriverPolicy
+    aws_eks_pod_identity_association.ebs_csi_driver
   ]
+}
+
+resource "aws_eks_addon" "pod_identity" {
+  cluster_name  = aws_eks_cluster.main.name
+  addon_name    = "eks-pod-identity-agent"
+  addon_version = "v1.2.0-eksbuild.1"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+}
+
+# ------------------------------------------------------------------------------
+# Metrics Server (Required for HPA)
+# ------------------------------------------------------------------------------
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  namespace  = "kube-system"
+  version    = "3.12.1"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  values = [
+    "${file("${path.module}/values/metrics-server-values.yaml")}"
+  ]
+
+  set {
+    name  = "metrics.enabled"
+    value = "false"
+  }
 }

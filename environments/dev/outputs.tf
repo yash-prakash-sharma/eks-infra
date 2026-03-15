@@ -90,17 +90,8 @@ output "acm_certificate_arn" {
   value       = module.dns.acm_certificate_arn
 }
 
-output "eso_role_arn" {
-  description = "The ARN of the IAM Role for the External Secrets Operator"
-  value       = module.secrets.eso_role_arn
-}
 
 output "fluentbit_role_arn" {
   description = "The ARN of the IAM Role for Fluent Bit Logs"
   value       = module.fluent_bit.fluentbit_role_arn
-}
-
-output "autoscaler_role_arn" {
-  description = "The ARN of the IAM Role for the Kubernetes Cluster Autoscaler"
-  value       = module.autoscaler.autoscaler_role_arn
 }

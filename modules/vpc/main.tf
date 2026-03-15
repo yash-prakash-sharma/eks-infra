@@ -30,7 +30,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = cidrsubnet(var.cidr_block, 4, count.index)
   availability_zone       = local.azs[count.index]
-  map_public_ip_on_launch  = true
+  map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
     Name                     = "${var.name_prefix}-public-${count.index + 1}"

@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: login-service
+  namespace: app
   labels:
     app: login-service
 spec:
@@ -14,12 +15,24 @@ spec:
       labels:
         app: login-service
     spec:
+      serviceAccountName: app-sa
       containers:
       - name: login-service
         # Replace with your actual ECR image URI
         image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/login-service:latest
         ports:
         - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
         env:
         - name: MYSQL_SERVER
           valueFrom:
@@ -48,14 +61,21 @@ spec:
               key: MYSQL_PASSWORD
         - name: SECRET_KEY
           valueFrom:
-            secretKeyRef:
               name: app-secrets
               key: SECRET_KEY
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "app-secrets-provider"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: login-service
+  namespace: app
 spec:
   selector:
     app: login-service
@@ -64,3 +84,23 @@ spec:
       port: 8000
       targetPort: 8000
   type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: login-service-hpa
+  namespace: app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: login-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
