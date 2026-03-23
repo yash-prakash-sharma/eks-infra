@@ -13,7 +13,7 @@ provider "helm" {
 
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name, "--region", var.aws_region, "--profile", "terraform-user"]
       command     = "aws"
     }
   }
@@ -101,6 +101,11 @@ module "eks" {
   max_size            = 4
   node_instance_types = ["t3.large"]
 
+  # Observability
+  grafana_admin_password = var.grafana_admin_password
+  acm_certificate_arn    = module.dns.acm_certificate_arn
+  domain_name            = var.domain_name
+
   tags = local.tags
 }
 
@@ -151,20 +156,6 @@ module "secrets" {
   source = "../../modules/secrets"
 
   name_prefix = var.name_prefix
-
-  depends_on = [module.eks]
-
-  tags = local.tags
-}
-
-# ------------------------------------------------------------------------------
-# Observability: Fluent Bit (Logs)
-# ------------------------------------------------------------------------------
-module "fluent_bit" {
-  source = "../../modules/fluent_bit"
-
-  name_prefix  = var.name_prefix
-  cluster_name = module.eks.cluster_name
 
   depends_on = [module.eks]
 

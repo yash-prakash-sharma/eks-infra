@@ -1,8 +1,9 @@
 # 1. Create the AWS Secrets Manager Secret
 resource "aws_secretsmanager_secret" "app_secrets" {
-  name        = "${var.name_prefix}-app-secrets"
-  description = "Application secrets for the EKS microservices"
-  tags        = var.tags
+  name                    = "${var.name_prefix}-app-secrets"
+  description             = "Application secrets for the EKS microservices"
+  tags                    = var.tags
+  recovery_window_in_days = 7
 }
 
 # Provide an initial dummy/placeholder version to avoid errors, allowing users to update it later in the console.

@@ -47,7 +47,6 @@ output "ecr_repository_urls" {
   description = "ECR repository URLs"
   value       = module.ecr.repository_urls
 }
-/*
 output "rds_endpoint" {
   description = "RDS instance endpoint (use from bastion)"
   value       = module.rds.endpoint
@@ -68,7 +67,6 @@ output "bastion_ssh_command" {
   description = "Example SSH command to bastion"
   value       = "ssh -i <your-key.pem> ec2-user@${module.bastion.public_ip}"
 }
-*/
 
 output "eks_cluster_name" {
   description = "EKS cluster name"
@@ -90,8 +88,9 @@ output "acm_certificate_arn" {
   value       = module.dns.acm_certificate_arn
 }
 
-
+/*
 output "fluentbit_role_arn" {
   description = "The ARN of the IAM Role for Fluent Bit Logs"
   value       = module.fluent_bit.fluentbit_role_arn
 }
+*/

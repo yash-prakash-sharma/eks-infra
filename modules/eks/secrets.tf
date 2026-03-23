@@ -49,6 +49,11 @@ resource "aws_iam_role_policy_attachment" "secrets_csi" {
   role       = aws_iam_role.secrets_csi.name
 }
 
+resource "aws_iam_role_policy_attachment" "app_s3_access" {
+  policy_arn = aws_iam_policy.s3_access.arn
+  role       = aws_iam_role.secrets_csi.name
+}
+
 resource "aws_eks_pod_identity_association" "secrets_csi" {
   cluster_name    = aws_eks_cluster.main.name
   namespace       = "app"
@@ -74,16 +79,35 @@ resource "helm_release" "secrets_csi_driver" {
     value = true
   }
 
+  wait          = true          # add this — ensures CRDs are ready before AWS provider installs
+  wait_for_jobs = true
+  timeout       = 300
+
   depends_on = [aws_eks_node_group.main]
 }
 
 resource "helm_release" "secrets_csi_driver_aws_provider" {
   name = "secrets-store-csi-driver-provider-aws"
+  # Point directly to the GitHub release archive to bypass the Helm repo's
+  # sub-chart dependency resolution (which silently falls back to 0.3.x).
+  chart     = "https://github.com/aws/secrets-store-csi-driver-provider-aws/releases/download/2.2.2/secrets-store-csi-driver-provider-aws-2.2.2.tgz"
+  namespace = "kube-system"
 
-  repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
-  chart      = "secrets-store-csi-driver-provider-aws"
-  namespace  = "kube-system"
-  version    = "0.3.8"
+  # Disable the bundled secrets-store-csi-driver sub-chart
+  # (we already install it separately via helm_release.secrets_csi_driver)
+  set {
+    name  = "secrets-store-csi-driver.install"
+    value = "false"
+  }
+
+  set {
+    name  = "enablePodIdentity"
+    value = "true"
+  }
+
+  wait          = true
+  wait_for_jobs = true
+  timeout       = 300
 
   depends_on = [helm_release.secrets_csi_driver]
 }

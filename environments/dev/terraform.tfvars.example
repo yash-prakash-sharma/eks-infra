@@ -1,0 +1,25 @@
+# Copy to terraform.tfvars and fill in. Do not commit terraform.tfvars if it contains secrets.
+
+aws_region  = "us-east-1"
+name_prefix = "myapp-ue1-dev-eks-app"
+
+# CIDR allowed to SSH to bastion (e.g. "1.2.3.4/32" or "0.0.0.0/0" for any)
+bastion_ssh_cidr = "0.0.0.0/0"
+
+# EC2 key pair name (must exist in us-east-1)
+bastion_key_name = "your-key-name"
+
+# RDS credentials
+db_name     = "myappdb"
+db_username = "admin"
+db_password = "your-password"
+
+# Optional overrides
+# db_instance_class = "db.t3.micro"
+# ecr_repo_names    = ["login-service", "file-service"]
+
+# Custom Domain (for Hostinger)
+domain_name = "your-domain.com"
+
+# --- Grafana UI Auth ---
+grafana_admin_password = "your-password"

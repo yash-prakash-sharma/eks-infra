@@ -19,7 +19,7 @@ spec:
       containers:
       - name: login-service
         # Replace with your actual ECR image URI
-        image: <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/login-service:latest
+        image: <YOUR_ECR_IMAGE_URI>/login-service:latest
         ports:
         - containerPort: 8000
         resources:
@@ -61,6 +61,7 @@ spec:
               key: MYSQL_PASSWORD
         - name: SECRET_KEY
           valueFrom:
+            secretKeyRef:
               name: app-secrets
               key: SECRET_KEY
       volumes:
