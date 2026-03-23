@@ -56,3 +56,9 @@ variable "domain_name" {
   description = "Custom domain name (e.g. hostinger domain)"
   type        = string
 }
+
+variable "grafana_admin_password" {
+  description = "Admin password for the Grafana UI"
+  type        = string
+  sensitive   = true
+}

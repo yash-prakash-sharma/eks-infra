@@ -8,7 +8,7 @@ resource "aws_cloudfront_origin_access_control" "s3" {
 
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
-  is_ipv6_enabled      = true
+  is_ipv6_enabled     = true
   default_root_object = var.default_root_object
   comment             = var.comment
   price_class         = var.price_class

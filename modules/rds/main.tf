@@ -54,7 +54,7 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false
   multi_az               = var.multi_az
 
-  storage_encrypted = true
+  storage_encrypted       = true
   backup_retention_period = var.backup_retention_period
   skip_final_snapshot     = var.skip_final_snapshot
 
